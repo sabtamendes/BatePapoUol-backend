@@ -17,68 +17,94 @@ let db;
 let participants;
 let messages;
 
- mongo.connect().then(() => {
-     db = mongo.db("batepapouol");
-     participants = db.collection("participants");
-     messages = db.collection("messages");
- });
+mongo.connect().then(() => {
+    db = mongo.db("batepapouol");
+    participants = db.collection("participants");
+    messages = db.collection("messages");
+});
 
 
- const participantSchema = joi.object({
-    name : joi.string().min(3).required()
- })
+const participantSchema = joi.object({
+    name: joi.string().min(3).required()
+})
 
- const messageSchema = joi.object({
-    from: joi.string().min(3).required(), 
-    to: joi.string().min(3).required(), 
-    text: joi.string().min(3).required(), 
-    type: joi.string().valid("message", "private_message").required(), 
+const messageSchema = joi.object({
+    from: joi.string().min(3).required(),
+    to: joi.string().min(3).required(),
+    text: joi.string().min(3).required(),
+    type: joi.string().valid("message", "private_message").required(),
     time: joi.string()
 })
 
 
-server.post("/participants",(req,res)=>{
+server.post("/participants", (req, res) => {
     const participant = req.body;
 
-    const validation = participantSchema.validate(participant,{ abortEarly: false});
+    const validation = participantSchema.validate(participant, { abortEarly: false });
 
-    if(validation.error){
+    if (validation.error) {
         const err = validation.error.details.map((detail) => detail.message)
         res.status(422).send(err);
         return;
     }
 
- const participantAlreadyExist = participants.findOne({name: participant.name});
+    
+     participants.findOne({ name: participant.name }).then((p)=>{
+        console.log(p)
 
- if(participantAlreadyExist){
-     res.sendStatus(409);
-     return;
- }
+        if (p) {
+            res.sendStatus(409);
+           return;
+        }
+   
+       participants
+           .insertOne({
+               name: participant.name,
+               lastStatus: Date.now()
+           })
+   
+       
+       messages.insertOne({
+           from: participant.name,
+           to: 'Todos',
+           text: 'entra na sala...',
+           type: 'status',
+           time: dayjs().locale('pt-br').format('HH:MM:SS')
+       })
+       res.sendStatus(201);
+     })
 
-    participants
-        .insertOne({
-            name: participant.name, 
-            lastStatus: Date.now()
-            })
-          
-    messages.insertOne({
-        from: participant.name, 
-        to: 'Todos', 
-        text: 'entra na sala...', 
-        type: 'status', 
-        time: dayjs().locale('pt-br').format('HH:MM:SS')
-    })
-    res.sendStatus(201);
+ 
 })
 
-server.get("/participants",(req,res)=>{
-  const participantExist = participants.find().toArray().then((participants)=>{
+server.get("/participants", (req, res) => {
+    const participantExist = participants.find().toArray().then((participants) => {
         res.send(participants)
     });
-    if(!participantExist ){
-        res.send(404).status({error: "Usuário não encontrado"})
+    if (!participantExist) {
+        res.send(404).status({ error: "Usuário não encontrado" })
     }
     res.sendStatus(200);
 })
 
-server.listen(5000, () => {console.log("Running on port 5000")});
+server.post("/messages", (req, res) => {
+    const { to, text, type } = req.body;
+    const { user } = req.headers;
+
+    const validation = messageSchema.validate(to, text, type, user, { abortEarly: false })
+
+    if (validation.error) {
+        const err = validation.error.details.map((detail) => detail.message)
+        res.status(422).send(err);
+        return;
+    }
+
+    messages.insertOne({
+        from: user,
+        to: 'Todos',
+        text: 'entra na sala...',
+        type: 'status',
+        time: dayjs().locale('pt-br').format('HH:MM:SS')
+    })
+})
+server.listen(5000, () => { console.log("Running on port 5000") });
