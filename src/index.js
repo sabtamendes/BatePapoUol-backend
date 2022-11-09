@@ -48,33 +48,32 @@ server.post("/participants", (req, res) => {
         return;
     }
 
-    
-     participants.findOne({ name: participant.name }).then((p)=>{
-        console.log(p)
+
+    participants.findOne({ name: participant.name }).then((p) => {
 
         if (p) {
             res.sendStatus(409);
-           return;
+            return;
         }
-   
-       participants
-           .insertOne({
-               name: participant.name,
-               lastStatus: Date.now()
-           })
-   
-       
-       messages.insertOne({
-           from: participant.name,
-           to: 'Todos',
-           text: 'entra na sala...',
-           type: 'status',
-           time: dayjs().locale('pt-br').format('HH:MM:SS')
-       })
-       res.sendStatus(201);
-     })
 
- 
+        participants
+            .insertOne({
+                name: participant.name,
+                lastStatus: Date.now()
+            })
+
+
+        messages.insertOne({
+            from: participant.name,
+            to: 'Todos',
+            text: 'entra na sala...',
+            type: 'status',
+            time: dayjs().locale('pt-br').format('HH:MM:SS')
+        })
+        res.sendStatus(201);
+    })
+
+
 })
 
 server.get("/participants", (req, res) => {
@@ -88,8 +87,9 @@ server.get("/participants", (req, res) => {
 })
 
 server.post("/messages", (req, res) => {
-    const { to, text, type } = req.body;
-    const { user } = req.headers;
+  
+     const {text, to, type } = req.body;
+    const {user} = req.headers;
 
     const validation = messageSchema.validate(to, text, type, user, { abortEarly: false })
 
@@ -99,12 +99,29 @@ server.post("/messages", (req, res) => {
         return;
     }
 
+
+    const participantAlreadyExist = participants.findOne({name: user});
+
+    if(participantAlreadyExist){
+        res.sendStatus(409);
+        return;
+    }
+        
+    
     messages.insertOne({
         from: user,
-        to: 'Todos',
-        text: 'entra na sala...',
-        type: 'status',
+        to: to,
+        text: text,
+        type: type,
         time: dayjs().locale('pt-br').format('HH:MM:SS')
     })
+    res.sendStatus(201)
+})
+
+server.get("/messages",(req,res)=>{
+    messages.find({}).toArray().then((m)=>{
+        res.send(m)
+    })
+    
 })
 server.listen(5000, () => { console.log("Running on port 5000") });
