@@ -1,5 +1,5 @@
 import cors from "cors";
-//import dayjs from "dayjs";
+import dayjs from "dayjs";
 import dotenv from "dotenv";
 import express from "express";
 import joi from "joi";
@@ -29,11 +29,16 @@ let messages;
  })
 
  const messageSchema = joi.object({
+    from: joi.string().min(3).required(), 
+    to: joi.string().min(3).required(), 
+    text: joi.string().min(3).required(), 
+    type: joi.string().valid("message", "private_message").required(), 
+    time: joi.string()
+})
 
- })
+
 server.post("/participants",(req,res)=>{
     const participant = req.body;
-    //const data = dayjs().locale('pt-br').format('HH:MM:SS');
 
     const validation = participantSchema.validate(participant,{ abortEarly: false});
 
@@ -43,12 +48,12 @@ server.post("/participants",(req,res)=>{
         return;
     }
 
-// const participantAlreadyExist = participants.findOne({name: participant.name});
+ const participantAlreadyExist = participants.findOne({name: participant.name});
 
-// if(participantAlreadyExist){
-//     res.sendStatus(409);
-//     return;
-// }
+ if(participantAlreadyExist){
+     res.sendStatus(409);
+     return;
+ }
 
     participants
         .insertOne({
@@ -56,15 +61,24 @@ server.post("/participants",(req,res)=>{
             lastStatus: Date.now()
             })
           
-    
-    res.sendStatus(201)
+    messages.insertOne({
+        from: participant.name, 
+        to: 'Todos', 
+        text: 'entra na sala...', 
+        type: 'status', 
+        time: dayjs().locale('pt-br').format('HH:MM:SS')
+    })
+    res.sendStatus(201);
 })
 
 server.get("/participants",(req,res)=>{
-    participants.find().toArray().then((participants)=>{
+  const participantExist = participants.find().toArray().then((participants)=>{
         res.send(participants)
     });
+    if(!participantExist ){
+        res.send(404).status({error: "Usuário não encontrado"})
+    }
+    res.sendStatus(200);
 })
 
-
-server.listen(5000, ()=>{console.log("Running on port 5000")});
+server.listen(5000, () => {console.log("Running on port 5000")});
