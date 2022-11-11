@@ -195,7 +195,7 @@ setInterval(async () => {
         res.status(500).send(error.message);
     }
 
-}, 15000)
+}, 150000)
 
 server.delete("/messages/:id", async (req, res) => {
     const user = req.headers.user;
@@ -221,48 +221,47 @@ server.delete("/messages/:id", async (req, res) => {
 
 })
 
-server.put("/messages/:id", async (req, res) => {
-    const { to, text, type } = req.body;
-    const from = req.headers.user;
+server.put('/messages/:id', async (req, res) => {
     const { id } = req.params;
-
-    const message = {
-        to,
-        text,
-        type
-    }
-
-    const validation = messageSchema.validate(message, { abortEarly: false });
-
-    if (validation.error) {
-        const validationError = validation.error.details.map((detail) => detail.message)
-        res.status(422).send(validationError);
-        return;
-    }
+    const from = req.headers.user;
+    const { to, text, type } = req.body;
 
     try {
+        const newMessage = {
+            from, to, text, type
+        }
+
+        const validation = messageSchema.validate(newMessage);
+        if (validation.error) {
+            return res.sendStatus(422);
+        }
 
         const participantExist = await participants.findOne({ name: from })
+
         if (!participantExist) {
-            return res.sendStatus(422)
+            return res.sendStatus(422);
         }
 
-        const messageExist = await messages.findOne({ _id: new ObjectId(id) })
-        if (!messageExist) {
-            return sendStatus(404)
+        const message = await messages.findOne({ _id: new ObjectId(id) });
+
+        if (!message) {
+            return res.sendStatus(404);
         }
 
-        if (messageExist.from !== from) {
-            return res.sendStatus(401)
+        if (message.from !== from) {
+            return res.sendStatus(401);
         }
 
-        await messages.updateOne({ id_: messageExist._id }, { $set: message })
+
+        await messages.updateOne({ _id: new ObjectId(id) },
+            { $set: newMessage });
 
         res.sendStatus(201);
 
     } catch (error) {
-        res.status(500).send(error.message)
+        res.status(500).send(error.message);
     }
 })
 
-server.listen(5000, () => { console.log("Running on port 5000") });
+server.listen(process.env.PORT, () => { console.log("Listening on port " + process.env.PORT) });
+
