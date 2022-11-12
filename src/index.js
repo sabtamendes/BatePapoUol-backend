@@ -183,11 +183,12 @@ server.post("/status", async (req, res) => {
 
 setInterval(async () => {
 
-    const statusInative = Date.now() - 10 * 1000;
+     const onlineStatusInMilliseconds = Date.now();
+     const statusInSecondsInative = onlineStatusInMilliseconds - 10 * 1000;
 
     try {
 
-        const participantStatusInative = await participants.find({ lastStatus: { $lte: statusInative } }).toArray();
+        const participantStatusInative = await participants.find({ lastStatus: { $lte: statusInSecondsInative } }).toArray();
 
         if (participantStatusInative.length > 0) {
 
@@ -203,7 +204,7 @@ setInterval(async () => {
 
             await messages.insertMany(messageInativeUpdate)
 
-            await participants.deleteMany({ lastStatus: { $lte: statusInative } })
+            await participants.deleteMany({ lastStatus: { $lte: statusInSecondsInative } })
         }
 
     } catch (error) {
@@ -213,7 +214,7 @@ setInterval(async () => {
 }, 1500)
 
 server.delete("/messages/:id", async (req, res) => {
-    
+
     const from = req.headers.user;
     const id = req.params.id;
 
