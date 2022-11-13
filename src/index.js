@@ -138,23 +138,9 @@ server.get("/messages", async (req, res) => {
 
     try {
 
-        const allMesssages = await messages.find().toArray();
-
-        const message = allMesssages.filter((message) => {
-
-            const { from, to, type } = message;
-
-            const specificUser = to === "Todos" || to === user || from === user;
-
-            const specificType = type === "message";
-
-            return specificUser || specificType;
-        })
-
-        if (limit) {
-            res.send(message.slice(-100));
-            return;
-        }
+        const message = await messages.find({ $or: [{ "from": user }, { "to": "Todos" }, { "to": user }, { "type": "message" }] })
+            .limit(-limit)
+            .toArray();
 
         res.send(message);
 
@@ -183,8 +169,8 @@ server.post("/status", async (req, res) => {
 
 setInterval(async () => {
 
-     const onlineStatusInMilliseconds = Date.now();
-     const statusInSecondsInative = onlineStatusInMilliseconds - 10 * 1000;
+    const onlineStatusInMilliseconds = Date.now();
+    const statusInSecondsInative = onlineStatusInMilliseconds - 10 * 1000;
 
     try {
 
