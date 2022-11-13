@@ -139,8 +139,12 @@ server.get("/messages", async (req, res) => {
     try {
 
         const message = await messages.find({ $or: [{ "from": user }, { "to": "Todos" }, { "to": user }, { "type": "message" }] })
-            .limit(-limit)
             .toArray();
+
+        if (limit) {
+            res.send(message.slice(-limit));
+            return;
+        }
 
         res.send(message);
 
