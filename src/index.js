@@ -46,14 +46,14 @@ server.post("/participants", async (req, res) => {
 
         if (error) {
             const err = error.details.map((detail) => detail.message)
-            res.status(422).send(err);
+            res.status(422).send(err)
             return;
         }
 
         const participantAlreadyExist = await participants.findOne({ name: user.name })
 
         if (participantAlreadyExist) {
-            res.sendStatus(409);
+            res.sendStatus(409)
             return;
         }
 
@@ -73,7 +73,7 @@ server.post("/participants", async (req, res) => {
         res.sendStatus(201);
 
     } catch (error) {
-        res.status(500).send(error.message)
+        res.sendStatus(500);
     }
 })
 
@@ -88,7 +88,7 @@ server.get("/participants", async (req, res) => {
         }
 
     } catch (error) {
-        res.status(500).send(error.message);
+        res.sendStatus(500);
     }
 })
 
@@ -117,7 +117,7 @@ server.post("/messages", async (req, res) => {
         const user = await participants.findOne({ name: from });
 
         if (!user) {
-            res.sendStatus(409)
+            res.sendStatus(404)
             return;
         }
 
@@ -126,7 +126,7 @@ server.post("/messages", async (req, res) => {
         res.sendStatus(201)
 
     } catch (error) {
-        res.status(500).send(error.message);
+        res.sendStatus(500);
     }
 
 })
@@ -149,7 +149,7 @@ server.get("/messages", async (req, res) => {
         res.send(message);
 
     } catch (error) {
-        res.status(500).send(error.message);
+        res.sendStatus(500);
     }
 })
 
@@ -167,7 +167,7 @@ server.post("/status", async (req, res) => {
         res.sendStatus(200)
 
     } catch (error) {
-        res.status(404).send(error.message);
+        res.sendStatus(404);
     }
 })
 
@@ -225,7 +225,7 @@ server.delete("/messages/:id", async (req, res) => {
         res.sendStatus(200)
 
     } catch (error) {
-        res.status(500).send(error.message);
+        res.sendStatus(500);
     }
 })
 
@@ -271,9 +271,8 @@ server.put('/messages/:id', async (req, res) => {
         res.sendStatus(201);
 
     } catch (error) {
-        res.status(500).send(error.message);
+        res.sendStatus(500);
     }
 })
 
 server.listen(process.env.PORT, () => { console.log("Listening on port " + process.env.PORT) });
-
